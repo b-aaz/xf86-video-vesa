@@ -167,9 +167,9 @@ static const char *fbSymbols[] = {
 static const char *shadowSymbols[] = {
     "shadowAlloc",
     "shadowInit",
-    "shadowUpdatePacked",
-    "shadowUpdatePlanar4",
-    "shadowUpdatePlanar4x8",
+    "shadowUpdatePackedWeak",
+    "shadowUpdatePlanar4Weak",
+    "shadowUpdatePlanar4x8Weak",
     NULL
 };
 
@@ -212,7 +212,7 @@ static XF86ModuleVersionInfo vesaVersionRec =
     MODULEVENDORSTRING,
     MODINFOSTRING1,
     MODINFOSTRING2,
-    XF86_VERSION_CURRENT,
+    XORG_VERSION_CURRENT,
     VESA_MAJOR_VERSION, VESA_MINOR_VERSION, VESA_PATCHLEVEL,
     ABI_CLASS_VIDEODRV,			/* This is a video driver */
     ABI_VIDEODRV_VERSION,
@@ -909,17 +909,17 @@ VESAScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
 	if (mode->MemoryModel == 3) {	/* Planar */
 	  if (pScrn->bitsPerPixel == 8)
-		update = shadowUpdatePlanar4x8;
+		update = shadowUpdatePlanar4x8Weak();
 	    else
-		update = shadowUpdatePlanar4;
+		update = shadowUpdatePlanar4Weak();
 	    window = VESAWindowPlanar;
 	}
 	else if (pVesa->mapPhys == 0xa0000) {	/* Windowed */
-	    update = shadowUpdatePacked;
+	    update = shadowUpdatePackedWeak();
 	    window = VESAWindowWindowed;
 	}
 	else {	/* Linear */
-	    update = shadowUpdatePacked;
+	    update = shadowUpdatePackedWeak();
 	    window = VESAWindowLinear;
 	}
 
