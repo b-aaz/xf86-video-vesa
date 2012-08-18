@@ -1626,7 +1626,7 @@ VESASaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
 {
     VESAPtr pVesa;
 
-    if (MODE_QUERY < 0 || function > MODE_RESTORE)
+    if (function < MODE_QUERY || function > MODE_RESTORE)
 	return (FALSE);
 
     pVesa = VESAGetRec(pScrn);
