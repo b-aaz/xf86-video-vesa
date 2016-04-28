@@ -838,9 +838,11 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
     /* Use shadow by default */
     pVesa->shadowFB = xf86ReturnOptValBool(pVesa->Options, OPTION_SHADOW_FB,
                                            TRUE);
-
-    if (xf86ReturnOptValBool(pVesa->Options, OPTION_DFLT_REFRESH, FALSE))
-	pVesa->defaultRefresh = TRUE;
+    /*  Use default refresh by default. Too many VBE 3.0
+     *   BIOSes are incorrectly implemented.
+     */
+    pVesa->defaultRefresh = xf86ReturnOptValBool(pVesa->Options,
+                                                 OPTION_DFLT_REFRESH, TRUE);
 
     pVesa->ModeSetClearScreen =
         xf86ReturnOptValBool(pVesa->Options,
