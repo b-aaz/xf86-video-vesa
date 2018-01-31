@@ -724,6 +724,9 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86SetGamma(pScrn, gzeros);
 
+    /* set up options before loading any modules that may look at them */
+    xf86CollectOptions(pScrn, NULL);
+
     if (pVesa->major >= 2) {
 	/* Load ddc module */
 	if ((pDDCModule = xf86LoadSubModule(pScrn, "ddc")) == NULL) {
@@ -834,7 +837,6 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
     }
 
     /* options */
-    xf86CollectOptions(pScrn, NULL);
     if (!(pVesa->Options = malloc(sizeof(VESAOptions)))) {
         vbeFree(pVesa->pVbe);
 	return FALSE;
