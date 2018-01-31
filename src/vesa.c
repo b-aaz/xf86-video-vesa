@@ -66,7 +66,11 @@
 /* Mandatory functions */
 static const OptionInfoRec * VESAAvailableOptions(int chipid, int busid);
 static void VESAIdentify(int flags);
+#if defined(XSERVER_LIBPCIACCESS) && !defined(HAVE_ISA)
+#define VESAProbe NULL
+#else
 static Bool VESAProbe(DriverPtr drv, int flags);
+#endif
 #ifdef XSERVER_LIBPCIACCESS
 static Bool VESAPciProbe(DriverPtr drv, int entity_num,
      struct pci_device *dev, intptr_t match_data);
@@ -466,6 +470,7 @@ VESAPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
 }
 #endif
 
+#ifndef VESAProbe
 static Bool
 VESAProbe(DriverPtr drv, int flags)
 {
@@ -536,6 +541,7 @@ VESAProbe(DriverPtr drv, int flags)
 
     return (foundScreen);
 }
+#endif
 
 #ifdef HAVE_ISA
 static int
