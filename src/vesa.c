@@ -596,7 +596,8 @@ VESAFreeRec(ScrnInfoPtr pScrn)
     }
 #endif
     free(pVesa->monitor);
-    free(pVesa->vbeInfo);
+    if (pVesa->vbeInfo)
+	VBEFreeVBEInfo(pVesa->vbeInfo);
     free(pVesa->pal);
     free(pVesa->savedPal);
     free(pVesa->fonts);
