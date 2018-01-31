@@ -1356,6 +1356,27 @@ VESALoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
     int i, idx;
     int base;
 
+    if (!pVesa->savedPal) {
+#define VESADACDelay()							       \
+	do {                                                                   \
+	   (void)inb(pVesa->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET); \
+	   (void)inb(pVesa->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET); \
+	} while (0)
+
+	for (i = 0; i < numColors; i++) {
+	   idx = indices[i];
+	   outb(pVesa->ioBase + VGA_DAC_WRITE_ADDR, idx);
+	   VESADACDelay();
+	   outb(pVesa->ioBase + VGA_DAC_DATA, colors[idx].red);
+	   VESADACDelay();
+	   outb(pVesa->ioBase + VGA_DAC_DATA, colors[idx].green);
+	   VESADACDelay();
+	   outb(pVesa->ioBase + VGA_DAC_DATA, colors[idx].blue);
+	   VESADACDelay();
+	}
+	return;
+    }
+
     if (pVesa->pal == NULL)
 	pVesa->pal = calloc(1, sizeof(CARD32) * 256);
 
