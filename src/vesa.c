@@ -854,9 +854,38 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
     memcpy(pVesa->Options, VESAOptions, sizeof(VESAOptions));
     xf86ProcessOptions(pScrn->scrnIndex, pScrn->options, pVesa->Options);
 
-    /* Use shadow by default */
-    pVesa->shadowFB = xf86ReturnOptValBool(pVesa->Options, OPTION_SHADOW_FB,
-                                           TRUE);
+    /* Use shadow by default, for non-virt hardware */
+    if (!xf86GetOptValBool(pVesa->Options, OPTION_SHADOW_FB, &pVesa->shadowFB))
+    {
+	switch (pVesa->pciInfo->vendor_id) {
+	    case 0x1234: /* bochs vga (not in pci.ids) */
+	    case 0x15ad: /* vmware */
+	    case 0x1b36: /* qemu qxl */
+	    case 0x80ee: /* virtualbox */
+	    case 0xaaaa: /* parallels (not in pci.ids) */
+		pVesa->shadowFB = FALSE;
+		break;
+
+	    case 0x1013: /* qemu's cirrus emulation */
+		if (pVesa->pciInfo->subvendor_id == 0x1af4)
+		    pVesa->shadowFB = FALSE;
+		else
+		    pVesa->shadowFB = TRUE;
+		break;
+
+	    case 0x1414: /* microsoft hyper-v */
+		if (pVesa->pciInfo->device_id == 0x5353)
+		    pVesa->shadowFB = FALSE;
+		else
+		    pVesa->shadowFB = TRUE;
+		break;
+
+	    default:
+		pVesa->shadowFB = TRUE;
+		break;
+	}
+    }
+
     /*  Use default refresh by default. Too many VBE 3.0
      *   BIOSes are incorrectly implemented.
      */
