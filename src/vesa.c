@@ -874,14 +874,14 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
 		    break;
 		default:
 		    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-			       "Unsupported bpp: %d", pScrn->bitsPerPixel);
+			       "Unsupported bpp: %d\n", pScrn->bitsPerPixel);
 		    vbeFree(pVesa->pVbe);
 		    return FALSE;
 	    }
 	    break;
 	default:
 	    xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-		       "Unsupported Memory Model: %d", mode->MemoryModel);
+		       "Unsupported Memory Model: %d\n", mode->MemoryModel);
 	    return FALSE;
     }
 
