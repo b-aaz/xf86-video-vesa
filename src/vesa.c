@@ -43,7 +43,7 @@
 #endif
 
 #include <string.h>
-
+#include <unistd.h>
 #include "vesa.h"
 
 /* All drivers initialising the SW cursor need this */
@@ -450,7 +450,14 @@ VESAPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
 	     intptr_t match_data)
 {
     ScrnInfoPtr pScrn;
-    
+
+#ifdef __linux__
+    if (access("/sys/devices/platform/efi-framebuffer.0", F_OK) == 0) {
+        ErrorF("vesa: Refusing to run on UEFI\n");
+        return FALSE;
+    }
+#endif
+
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, NULL, 
 				NULL, NULL, NULL, NULL, NULL);
     if (pScrn != NULL) {
