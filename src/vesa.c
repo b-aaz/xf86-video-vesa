@@ -452,7 +452,8 @@ VESAPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
     ScrnInfoPtr pScrn;
 
 #ifdef __linux__
-    if (access("/sys/devices/platform/efi-framebuffer.0", F_OK) == 0) {
+    if (access("/sys/devices/platform/efi-framebuffer.0", F_OK) == 0 ||
+        access("/sys/devices/platform/efifb.0", F_OK) == 0) {
         ErrorF("vesa: Refusing to run on UEFI\n");
         return FALSE;
     }
