@@ -44,6 +44,7 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 #include "vesa.h"
 
 /* All drivers initialising the SW cursor need this */
@@ -437,12 +438,40 @@ VESAInitScrn(ScrnInfoPtr pScrn)
     pScrn->FreeScreen    = VESAFreeScreen;
 }
 
+#ifdef XSERVER_LIBPCIACCESS
+#ifdef __linux__
+/*
+ * check if a file exist in directory
+ * should be equivalent to a glob ${directory}/${prefix}*
+ */
+
+static Bool
+VESAFileExistsPrefix(const char *directory, const char *prefix) {
+    DIR *dir;
+    struct dirent *entry;
+    Bool found = FALSE;
+    int len = strlen(prefix);
+    
+    dir = opendir(directory);
+    if (!dir)
+        return FALSE;
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (strlen(entry->d_name) > len && 
+            !memcmp(entry->d_name, prefix, len)) {
+            found = TRUE;
+            break;
+        }
+    }
+    closedir(dir);
+    return found;
+}
+#endif
+
 /*
  * This function is called once, at the start of the first server generation to
  * do a minimal probe for supported hardware.
  */
-
-#ifdef XSERVER_LIBPCIACCESS
 static Bool
 VESAPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
 	     intptr_t match_data)
@@ -450,9 +479,9 @@ VESAPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
     ScrnInfoPtr pScrn;
 
 #ifdef __linux__
-    if (access("/sys/devices/platform/efi-framebuffer.0", F_OK) == 0 ||
-        access("/sys/devices/platform/efifb.0", F_OK) == 0) {
-        ErrorF("vesa: Refusing to run on UEFI\n");
+    if (VESAFileExistsPrefix("/dev", "fb") || 
+        VESAFileExistsPrefix("/dev/dri", "card")) {
+        ErrorF("vesa: Refusing to run, Framebuffer or dri device present\n");
         return FALSE;
     }
 #endif
