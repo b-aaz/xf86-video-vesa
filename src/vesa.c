@@ -353,8 +353,6 @@ VESAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr p, Bool flag, int pass)
     DisplayModePtr mode;
     float v;
 
-    pVesa = VESAGetRec(pScrn);
-
     if (pass != MODECHECK_FINAL) {
 	if (!warned) {
 	    xf86DrvMsg(pScrn->scrnIndex, X_WARNING, "VESAValidMode called unexpectedly\n");
