@@ -77,16 +77,16 @@ static Bool VESAPciProbe(DriverPtr drv, int entity_num,
      struct pci_device *dev, intptr_t match_data);
 #endif
 static Bool VESAPreInit(ScrnInfoPtr pScrn, int flags);
-static Bool VESAScreenInit(SCREEN_INIT_ARGS_DECL);
-static Bool VESAEnterVT(VT_FUNC_ARGS_DECL);
-static void VESALeaveVT(VT_FUNC_ARGS_DECL);
-static Bool VESACloseScreen(CLOSE_SCREEN_ARGS_DECL);
+static Bool VESAScreenInit(ScreenPtr pScreen, int argc, char **argv);
+static Bool VESAEnterVT(ScrnInfoPtr pScrn);
+static void VESALeaveVT(ScrnInfoPtr pScrn);
+static Bool VESACloseScreen(ScreenPtr pScreen);
 static Bool VESASaveScreen(ScreenPtr pScreen, int mode);
 
-static Bool VESASwitchMode(SWITCH_MODE_ARGS_DECL);
+static Bool VESASwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode);
 static Bool VESASetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode);
-static void VESAAdjustFrame(ADJUST_FRAME_ARGS_DECL);
-static void VESAFreeScreen(FREE_SCREEN_ARGS_DECL);
+static void VESAAdjustFrame(ScrnInfoPtr pScrn, int x, int y);
+static void VESAFreeScreen(ScrnInfoPtr pScrn);
 static void VESAFreeRec(ScrnInfoPtr pScrn);
 static VESAPtr VESAGetRec(ScrnInfoPtr pScrn);
 
@@ -332,9 +332,8 @@ vesaModesCloseEnough(DisplayModePtr edid, DisplayModePtr vbe)
 }
 
 static ModeStatus
-VESAValidMode(SCRN_ARG_TYPE arg, DisplayModePtr p, Bool flag, int pass)
+VESAValidMode(ScrnInfoPtr pScrn, DisplayModePtr p, Bool flag, int pass)
 {
-    SCRN_INFO_PTR(arg);
     static int warned = 0;
     int found = 0;
     VESAPtr pVesa = VESAGetRec(pScrn);
@@ -722,7 +721,7 @@ VESAPreInit(ScrnInfoPtr pScrn, int flags)
 	xf86SetDDCproperties(pScrn, pVesa->monitor);
     else {
 	void *panelid = VBEReadPanelID(pVesa->pVbe);
-	VBEInterpretPanelID(SCRN_OR_INDEX_ARG(pScrn), panelid);
+	VBEInterpretPanelID(pScrn, panelid);
 	free(panelid);
     }
 
@@ -928,17 +927,16 @@ vesaCreateScreenResources(ScreenPtr pScreen)
 }
 
 static void
-vesaEnableDisableFBAccess(SCRN_ARG_TYPE arg, Bool enable)
+vesaEnableDisableFBAccess(ScrnInfoPtr pScrn, Bool enable)
 {
-    SCRN_INFO_PTR(arg);
     VESAPtr pVesa = VESAGetRec(pScrn);
 
     pVesa->accessEnabled = enable;
-    pVesa->EnableDisableFBAccess(arg, enable);
+    pVesa->EnableDisableFBAccess(pScrn, enable);
 }
 
 static Bool
-VESAScreenInit(SCREEN_INIT_ARGS_DECL)
+VESAScreenInit(ScreenPtr pScreen, int argc, char **argv)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VESAPtr pVesa = VESAGetRec(pScrn);
@@ -998,7 +996,7 @@ VESAScreenInit(SCREEN_INIT_ARGS_DECL)
 	return (FALSE);
 
     /* set the viewport */
-    VESAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
+    VESAAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
 
     /* Blank the screen for aesthetic reasons. */
     VESASaveScreen(pScreen, SCREEN_SAVER_ON);
@@ -1126,25 +1124,22 @@ VESAScreenInit(SCREEN_INIT_ARGS_DECL)
 }
 
 static Bool
-VESAEnterVT(VT_FUNC_ARGS_DECL)
+VESAEnterVT(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
-
     if (!VESASetMode(pScrn, pScrn->currentMode))
 	return FALSE;
-    VESAAdjustFrame(ADJUST_FRAME_ARGS(pScrn, pScrn->frameX0, pScrn->frameY0));
+    VESAAdjustFrame(pScrn, pScrn->frameX0, pScrn->frameY0);
     return TRUE;
 }
 
 static void
-VESALeaveVT(VT_FUNC_ARGS_DECL)
+VESALeaveVT(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
     VESASaveRestore(pScrn, MODE_RESTORE);
 }
 
 static Bool
-VESACloseScreen(CLOSE_SCREEN_ARGS_DECL)
+VESACloseScreen(ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VESAPtr pVesa = VESAGetRec(pScrn);
@@ -1170,21 +1165,20 @@ VESACloseScreen(CLOSE_SCREEN_ARGS_DECL)
     pScrn->EnableDisableFBAccess = pVesa->EnableDisableFBAccess;
     pScreen->CreateScreenResources = pVesa->CreateScreenResources;
     pScreen->CloseScreen = pVesa->CloseScreen;
-    return pScreen->CloseScreen(CLOSE_SCREEN_ARGS);
+    return pScreen->CloseScreen(pScreen);
 }
 
 static Bool
-VESASwitchMode(SWITCH_MODE_ARGS_DECL)
+VESASwitchMode(ScrnInfoPtr pScrn, DisplayModePtr mode)
 {
-    SCRN_INFO_PTR(arg);
     VESAPtr pVesa = VESAGetRec(pScrn);
     Bool ret, disableAccess = pVesa->ModeSetClearScreen && pVesa->accessEnabled;
 
     if (disableAccess)
-        pScrn->EnableDisableFBAccess(SCRN_OR_INDEX_ARG(pScrn),FALSE);
+        pScrn->EnableDisableFBAccess(pScrn,FALSE);
     ret = VESASetMode(pScrn, mode);
     if (disableAccess)
-	pScrn->EnableDisableFBAccess(SCRN_OR_INDEX_ARG(pScrn),TRUE);
+	pScrn->EnableDisableFBAccess(pScrn,TRUE);
     return ret;
 }
 
@@ -1245,18 +1239,16 @@ VESASetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 }
 
 static void
-VESAAdjustFrame(ADJUST_FRAME_ARGS_DECL)
+VESAAdjustFrame(ScrnInfoPtr pScrn, int x, int y)
 {
-    SCRN_INFO_PTR(arg);
     VESAPtr pVesa = VESAGetRec(pScrn);
 
     VBESetDisplayStart(pVesa->pVbe, x, y, TRUE);
 }
 
 static void
-VESAFreeScreen(FREE_SCREEN_ARGS_DECL)
+VESAFreeScreen(ScrnInfoPtr pScrn)
 {
-    SCRN_INFO_PTR(arg);
     VESAFreeRec(pScrn);
 }
 
@@ -1314,11 +1306,7 @@ VESAMapVidMem(ScrnInfoPtr pScrn)
     }
 #endif
 
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 12
-    pVesa->ioBase = pScrn->domainIOBase;
-#else
     pVesa->ioBase = 0;
-#endif
 
     xf86DrvMsgVerb(pScrn->scrnIndex, X_INFO, DEBUG_VERB,
 		   "virtual address = %p, VGAbase = %p\n"
@@ -1768,9 +1756,9 @@ VESADGASetMode(ScrnInfoPtr pScrn, DGAModePtr pDGAMode)
 	frameY0 = pScrn->frameY0;
     }
 
-    if (!(*pScrn->SwitchMode)(SWITCH_MODE_ARGS(pScrn, pMode)))
+    if (!(*pScrn->SwitchMode)(pScrn, pMode))
 	return (FALSE);
-    (*pScrn->AdjustFrame)(ADJUST_FRAME_ARGS(pScrn, frameX0, frameY0));
+    (*pScrn->AdjustFrame)(pScrn, frameX0, frameY0);
 
     return (TRUE);
 }
@@ -1778,7 +1766,7 @@ VESADGASetMode(ScrnInfoPtr pScrn, DGAModePtr pDGAMode)
 static void
 VESADGASetViewport(ScrnInfoPtr pScrn, int x, int y, int flags)
 {
-    (*pScrn->AdjustFrame)(ADJUST_FRAME_ARGS(pScrn, x, y));
+    (*pScrn->AdjustFrame)(pScrn, x, y);
 }
 
 static int
