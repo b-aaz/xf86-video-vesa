@@ -67,7 +67,7 @@
 /* Mandatory functions */
 static const OptionInfoRec * VESAAvailableOptions(int chipid, int busid);
 static void VESAIdentify(int flags);
-#if defined(XSERVER_LIBPCIACCESS) && !defined(HAVE_ISA)
+#if defined(XSERVER_LIBPCIACCESS)
 #define VESAProbe NULL
 #else
 static Bool VESAProbe(DriverPtr drv, int flags);
@@ -95,9 +95,6 @@ VESADisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode,
                 int flags);
 
 /* locally used functions */
-#ifdef HAVE_ISA
-static int VESAFindIsaDevice(GDevPtr dev);
-#endif
 static Bool VESAMapVidMem(ScrnInfoPtr pScrn);
 static void VESAUnmapVidMem(ScrnInfoPtr pScrn);
 static int VESABankSwitch(ScreenPtr pScreen, unsigned int iBank);
@@ -175,14 +172,6 @@ static PciChipsets VESAPCIchipsets[] = {
   { -1,		-1,	   RES_UNDEFINED },
 };
 #endif
-
-#ifdef HAVE_ISA
-static IsaChipsets VESAISAchipsets[] = {
-  {CHIP_VESA_GENERIC, RES_EXCLUSIVE_VGA},
-  {-1,		0 }
-};
-#endif
-
 
 /* 
  * This contains the functions needed by the server after loading the
@@ -550,58 +539,9 @@ VESAProbe(DriverPtr drv, int flags)
     }
 #endif
 
-#ifdef HAVE_ISA
-    /* Isa Bus */
-    numUsed = xf86MatchIsaInstances(VESA_NAME,VESAChipsets,
-				    VESAISAchipsets, drv,
-				    VESAFindIsaDevice, devSections,
-				    numDevSections, &usedChips);
-    if(numUsed > 0) {
-	if (flags & PROBE_DETECT)
-	    foundScreen = TRUE;
-	else for (i = 0; i < numUsed; i++) {
-	    ScrnInfoPtr pScrn = NULL;
-	    if ((pScrn = xf86ConfigIsaEntity(pScrn, 0,usedChips[i],
-					     VESAISAchipsets, NULL,
-					     NULL, NULL, NULL, NULL))) {
-		VESAInitScrn(pScrn);
-		foundScreen = TRUE;
-	    }
-	}
-	free(usedChips);
-    }
-#endif
-
     free(devSections);
 
     return (foundScreen);
-}
-#endif
-
-#ifdef HAVE_ISA
-static int
-VESAFindIsaDevice(GDevPtr dev)
-{
-#ifndef PC98_EGC
-    CARD16 GenericIOBase = VGAHW_GET_IOBASE();
-    CARD8 CurrentValue, TestValue;
-
-    /* There's no need to unlock VGA CRTC registers here */
-
-    /* VGA has one more read/write attribute register than EGA */
-    (void) inb(GenericIOBase + VGA_IN_STAT_1_OFFSET);  /* Reset flip-flop */
-    outb(VGA_ATTR_INDEX, 0x14 | 0x20);
-    CurrentValue = inb(VGA_ATTR_DATA_R);
-    outb(VGA_ATTR_DATA_W, CurrentValue ^ 0x0F);
-    outb(VGA_ATTR_INDEX, 0x14 | 0x20);
-    TestValue = inb(VGA_ATTR_DATA_R);
-    outb(VGA_ATTR_DATA_R, CurrentValue);
-
-    /* Quit now if no VGA is present */
-    if ((CurrentValue ^ 0x0F) != TestValue)
-      return -1;
-#endif
-    return (int)CHIP_VESA_GENERIC;
 }
 #endif
 
