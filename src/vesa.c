@@ -282,7 +282,7 @@ static VESAPtr
 VESAGetRec(ScrnInfoPtr pScrn)
 {
     if (!pScrn->driverPrivate)
-	pScrn->driverPrivate = calloc(sizeof(VESARec), 1);
+	pScrn->driverPrivate = calloc(1, sizeof(VESARec));
 
     return ((VESAPtr)pScrn->driverPrivate);
 }
@@ -297,7 +297,7 @@ VESASetModeParameters(vbeInfoPtr pVbe, DisplayModePtr vbemode,
 
     data = (VbeModeInfoData *)vbemode->Private;
 
-    data->block = calloc(sizeof(VbeCRTCInfoBlock), 1);
+    data->block = calloc(1, sizeof(VbeCRTCInfoBlock));
     data->block->HorizontalTotal = ddcmode->HTotal;
     data->block->HorizontalSyncStart = ddcmode->HSyncStart;
     data->block->HorizontalSyncEnd = ddcmode->HSyncEnd;
