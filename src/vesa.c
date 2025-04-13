@@ -1445,10 +1445,6 @@ ReadGr(VESAPtr pVesa, int index)
     return (inb(pVesa->ioBase + VGA_GRAPH_DATA));
 }
 
-#define WriteCrtc(index, value)						     \
-    outb(pVesa->ioBase + (VGA_IOBASE_COLOR + VGA_CRTC_INDEX_OFFSET), index); \
-    outb(pVesa->ioBase + (VGA_IOBASE_COLOR + VGA_CRTC_DATA_OFFSET), value)
-
 static void
 SeqReset(VESAPtr pVesa, Bool start)
 {
